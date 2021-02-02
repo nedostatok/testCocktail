@@ -7,11 +7,12 @@
 
 import Foundation
 
-class GetData {
-    static let shared = GetData()
+class NetworkService {
+    static let shared = NetworkService()
+    typealias HandletForDrinks = (Result<[Drink],Error>) -> ()
+    typealias HandleForFilters = (Result<[DrinkFilter],Error>) -> ()
     
-    func loadDrinks(param: String,completion: @escaping (ResponseEnum<[DrinkModel]>) -> ()) {
-        
+    func loadDrinks(param: String,completion: @escaping HandletForDrinks) {
         guard let url = URL(string: "https://www.thecocktaildb.com/api/json/v1/1/filter.php?c=\(param)") else { return }
         
         let session = URLSession(configuration: .default)
@@ -19,40 +20,39 @@ class GetData {
             
             guard error == nil else {
                 let taskError = NSError(domain: "", code: ErrorCode.taskError.rawValue, userInfo: nil)
-                completion(.Error(taskError))
+                completion(.failure(taskError))
                 return
             }
             
             guard let data = data else {
                 
                 let emptyData = NSError(domain: "", code: ErrorCode.emptyData.rawValue, userInfo: nil)
-                completion(.Error(emptyData))
+                completion(.failure(emptyData))
                 return
             }
             
             do {
-                let data = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String : Any]
-                let drinks = data["drinks"] as! [[String : Any]]
+                guard let data = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String : Any] else { return }
+                guard let drinks = data["drinks"] as? [[String : Any]] else { return }
                 
-                var arrayDrinks = [DrinkModel]()
+                var arrayDrinks = [Drink]()
                 
                 for i in drinks {
-                    let name = i["strDrink"] as! String
-                    let img = i["strDrinkThumb"] as! String
+                    guard let name = i["strDrink"] as? String else { return }
+                    guard let img = i["strDrinkThumb"] as? String else { return }
                     
-                    arrayDrinks.append(DrinkModel(drinkName: name, drinkImage: img))
+                    arrayDrinks.append(Drink(strDrink: name, strDrinkThumb: img))
                 }
-                
-                completion(.Value(arrayDrinks))
+                completion(.success(arrayDrinks))
                 
             } catch{
                 let parseError = NSError(domain: "", code: ErrorCode.parseError.rawValue, userInfo: nil)
-                completion(.Error(parseError))
+                completion(.failure(parseError))
             }
         }.resume()
     }
-
-    func loadFilters(completion: @escaping (ResponseEnum<[FilterModel]>) -> ()) {
+    
+    func loadFilters(completion: @escaping HandleForFilters) {
         
         guard let url = URL(string: "https://www.thecocktaildb.com/api/json/v1/1/list.php?c=list") else { return }
         
@@ -61,35 +61,35 @@ class GetData {
             
             guard error == nil else {
                 let taskError = NSError(domain: "", code: ErrorCode.taskError.rawValue, userInfo: nil)
-                completion(.Error(taskError))
+                completion(.failure(taskError))
                 return
             }
             
             guard let data = data else {
                 
                 let emptyData = NSError(domain: "", code: ErrorCode.emptyData.rawValue, userInfo: nil)
-                completion(.Error(emptyData))
+                completion(.failure(emptyData))
                 return
             }
             
             do {
                 
-                let data = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String : Any]
-                let drinks = data["drinks"] as! [[String : Any]]
+                guard let data = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String : Any] else { return }
+                guard let drinks = data["drinks"] as? [[String : Any]] else { return }
                 
-                var arrayFilters = [FilterModel]()
+                var arrayFilters = [DrinkFilter]()
                 
                 for i in drinks {
-                    let name = i["strCategory"] as! String
-
-                    arrayFilters.append(FilterModel(filterName: name))
+                    guard let name = i["strCategory"] as? String else { return }
+                    
+                    arrayFilters.append(DrinkFilter(strCategory: name))
                 }
-                
-                completion(.Value(arrayFilters))
+                arrayFilters.remove(at: 0)
+                completion(.success(arrayFilters))
                 
             } catch{
                 let parseError = NSError(domain: "", code: ErrorCode.parseError.rawValue, userInfo: nil)
-                completion(.Error(parseError))
+                completion(.failure(parseError))
             }
         }.resume()
     }

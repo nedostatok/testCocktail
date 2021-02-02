@@ -41,6 +41,4 @@ class NavigationBar: UIView {
     @IBAction func goBack(_ sender: UIButton) {
         delegate?.leftAction?()
     }
-    
-
 }

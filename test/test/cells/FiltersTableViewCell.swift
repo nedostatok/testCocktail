@@ -8,11 +8,10 @@
 import UIKit
 
 class FiltersTableViewCell: UITableViewCell {
-
-    @IBOutlet weak var filterLabel: UILabel!
     
-    func customizeCell(filters: FilterModel) {
-        filterLabel.text = filters.filterName
+    @IBOutlet private weak var filterLabel: UILabel!
+    
+    func customizeCell(filters: DrinkFilter) {
+        filterLabel.text = filters.strCategory
     }
-
 }

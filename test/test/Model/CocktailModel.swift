@@ -7,16 +7,23 @@
 
 import Foundation
 
-enum ResponseEnum<T> {
-    case Error(NSError)
-    case Value(T)
+// MARK: - Welcome
+struct DrinksModel {
+    let drinks: [Drink]
 }
 
-struct DrinkModel {
-    let drinkName: String
-    let drinkImage: String
+// MARK: - Drink
+struct Drink {
+    let strDrink: String
+    let strDrinkThumb: String?
 }
 
-struct FilterModel {
-    let filterName: String
+// MARK: - Welcome
+struct FiltersModel {
+    let drinks: [DrinkFilter]
+}
+
+// MARK: - Drink
+struct DrinkFilter {
+    let strCategory: String
 }

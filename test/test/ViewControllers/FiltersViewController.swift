@@ -8,10 +8,19 @@
 import UIKit
 
 class FiltersViewController: UIViewController {
+    
     typealias Completion = ((String) -> Void)?
     var complition: Completion = nil
     
-    var drinkFilters = [FilterModel]()
+    var drinkFilters = [DrinkFilter]() {
+        didSet{
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.tableView.reloadData()
+            }
+        }
+    }
+    
     var selectedFilter = ""
     
     @IBOutlet weak var tableView: UITableView!
@@ -24,50 +33,45 @@ class FiltersViewController: UIViewController {
     }
     
     func fetchData() {
-        GetData.shared.loadFilters { response in
+        NetworkService.shared.loadFilters { response in
             switch response {
-            case let .Value(valueOrError):
-                self.drinkFilters = valueOrError
-                
-            case let .Error(error):
+            case let .success(filters):
+                self.drinkFilters = filters
+            case let .failure(error):
                 print(error)
-            }
-            
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
             }
         }
     }
     
     @IBAction func applyFilter(_ sender: UIButton) {
-        complition?(selectedFilter.replacingOccurrences(of: " ", with: "_"))
+        complition?(selectedFilter)
         navigationController?.popViewController(animated: true)
     }
-    
 }
 
 extension FiltersViewController: UITableViewDelegate{}
 extension FiltersViewController: UITableViewDataSource{
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let selected = tableView.cellForRow(at: indexPath)
+        guard let selected = tableView.cellForRow(at: indexPath) else { return }
         let filter = drinkFilters[indexPath.row]
-        selectedFilter = filter.filterName
+        selectedFilter = filter.strCategory
         
-        if selected!.accessoryType == .checkmark {
-            selected!.accessoryType = .none
+        if selected.accessoryType == .checkmark {
+            selected.accessoryType = .none
         } else {
-            selected!.accessoryType = .checkmark
+            selected.accessoryType = .checkmark
         }
     }
+    
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-        let selected = tableView.cellForRow(at: indexPath)
+        guard let selected = tableView.cellForRow(at: indexPath) else { return }
         
-        if selected?.accessoryType == .checkmark {
-            selected!.accessoryType = .none
+        if selected.accessoryType == .checkmark {
+            selected.accessoryType = .none
         }
     }
-
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return drinkFilters.count
     }
@@ -86,7 +90,6 @@ extension FiltersViewController: NavigationBarDelegate {
     func leftAction() {
         navigationController?.navigationBar.isHidden = false
         self.navigationController?.popViewController(animated: true)
-        
     }
 }
 

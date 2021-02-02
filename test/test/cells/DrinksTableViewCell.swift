@@ -8,15 +8,20 @@
 import UIKit
 
 class DrinksTableViewCell: UITableViewCell {
-
-    @IBOutlet weak var cocktailImage: UIImageView!
-    @IBOutlet weak var cocktailLabel: UILabel!
     
-    func customizeCell(drinks: DrinkModel) {
-        cocktailLabel.text = drinks.drinkName
+    @IBOutlet private weak var cocktailImage: UIImageView!
+    @IBOutlet private weak var cocktailLabel: UILabel!
+    
+    func customizeCell(drinks: Drink) {
+        cocktailLabel.text = drinks.strDrink
         
-        guard let url = URL(string: drinks.drinkImage) else { return }
+        guard let stringUrl = drinks.strDrinkThumb else { return }
+        guard let url = URL(string: stringUrl) else { return }
         cocktailImage.load(url: url)
+    }
+    
+    override func prepareForReuse() {
+        cocktailImage.image = nil
     }
 }
 

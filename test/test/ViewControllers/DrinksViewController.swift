@@ -10,20 +10,28 @@ import UIKit
 class DrinksViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     
-    var drinksArray = [DrinkModel]()
-    var sectionName = "Ordinary_Drink"  {
+    var drinksArray = [Drink]() {
+        didSet {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.tableView.reloadData()
+            }
+        }
+    }
+    
+    var sectionName = "Shot"  {
         didSet {
             fetchData(param: sectionName)
             
             DispatchQueue.main.async { [weak self] in
-                self?.tableView.reloadData()
+                guard let self = self else { return }
+                self.tableView.reloadData()
             }
         }
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(true)
-        
         navigationController?.navigationBar.isHidden = false
     }
     
@@ -32,27 +40,21 @@ class DrinksViewController: UIViewController {
         
         self.navigationController?.interactivePopGestureRecognizer?.delegate = self
         fetchData(param: sectionName)
-        createLabel()
+        createLeftBarButton()
     }
     
     func fetchData(param: String) {
-        GetData.shared.loadDrinks(param: param) { response in
+        NetworkService.shared.loadDrinks(param: param) { response in
             switch response {
-            
-            case let .Value(valueOrError):
-                self.drinksArray = valueOrError
-                
-            case let .Error(error):
+            case let .success(drinks):
+                self.drinksArray = drinks
+            case let .failure(error):
                 print(error)
-            }
-            
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
             }
         }
     }
     
-    func createLabel() {
+    func createLeftBarButton() {
         let label = UILabel()
         label.text = "Drinks"
         label.font = UIFont.boldSystemFont(ofSize: 24)
@@ -96,7 +98,7 @@ extension DrinksViewController: UITableViewDataSource{
     }
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return sectionName.replacingOccurrences(of: "_", with: " ")
+        return sectionName
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -105,9 +107,7 @@ extension DrinksViewController: UITableViewDataSource{
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? DrinksTableViewCell else { return UITableViewCell() }
-        
         let array = drinksArray[indexPath.row]
-        
         cell.customizeCell(drinks: array)
         
         return cell
